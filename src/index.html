@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间管理债务计算器</title>
+    <style>
+        :root {
+            --primary-color: #1976D2;
+            --success-color: #4CAF50;
+            --warning-color: #FFA000;
+            --danger-color: #D32F2F;
+            --background-color: #F5F5F5;
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--background-color);
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .input-section {
+            grid-column: 1 / -1;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-wrapper {
+            margin-bottom: 10px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .button-container {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            max-width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            width: 120px;  /* 固定按钮宽度 */
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .add-btn {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .pay-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .newday-btn {
+            background-color: var(--warning-color);
+            color: white;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            padding: 15px;
+            border-radius: 8px;
+            background: white;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .history-list, .installments-list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .history-item, .installment-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            background: #f8f9fa;
+            border-left: 4px solid #ddd;
+        }
+
+        .history-item.payment {
+            border-left-color: var(--primary-color);
+        }
+
+        .history-item.delay {
+            border-left-color: var(--warning-color);
+        }
+
+        .history-item.success {
+            border-left-color: var(--success-color);
+        }
+
+        .today-data {
+            background: linear-gradient(145deg, #e8f5e9, #f1f8e9);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .input-wrapper {
+                max-width: 100%;
+            }
+            
+            .button-container {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card input-section">
+            <h1>时间管理债务计算器</h1>
+            
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <label for="delayTime">延迟时间（分钟）：</label>
+                    <input type="number" id="delayTime" min="0" max="1440" value="0">
+                </div>
+                <div class="button-container">
+                    <button onclick="addRecord()" class="add-btn">添加记录</button>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <label for="paymentAmount">还债金额：</label>
+                    <input type="number" id="paymentAmount" min="0" step="0.01" value="0">
+                </div>
+                <div class="button-container">
+                    <button onclick="makePayment()" class="pay-btn">还债</button>
+                </div>
+            </div>
+
+            <div class="button-container">
+                <button onclick="startNewDay()" class="newday-btn">新的一天</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>当前统计</h3>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalDebt">0.00</div>
+                    <div class="stat-label">总债务</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="rewardCounter">0</div>
+                    <div class="stat-label">未拖延天数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="currentDay">0</div>
+                    <div class="stat-label">当前天数</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>历史记录</h3>
+            <div class="today-data">
+                <h4>今日预览</h4>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="todayDelay">0</div>
+                        <div class="stat-label">延迟时间(分钟)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="todayDebtIncrease">0.00</div>
+                        <div class="stat-label">预计债务增加</div>
+                    </div>
+                </div>
+            </div>
+            <div class="history-list" id="historyList"></div>
+        </div>
+
+        <div class="card">
+            <h3>活跃分期</h3>
+            <div class="installments-list" id="installmentsList"></div>
+        </div>
+    </div>
+
+    <script>
+        let rewardCounter = 0;
+        let totalDebt = 0.0;
+        let installments = [];
+        let currentDate = 0;
+        let delayHistory = [];  // 新增：存储历史延迟时间
+
+        // 添加精度控制辅助函数
+        function formatNumber(num) {
+            return parseFloat(num.toFixed(2));
+        }
+
+        function calculateEstimatedDebt(delayTime) {
+            if (delayTime > 0 && delayTime < 180) {
+                return delayTime * 2;
+            } else if (delayTime >= 180) {
+                return delayTime * 2; // 返回总债务金额，不再只显示首期
+            }
+            return 0;
+        }
+
+        document.getElementById('delayTime').addEventListener('input', function(e) {
+            const delayTime = parseInt(this.value) || 0;
+            document.getElementById('todayDelay').textContent = delayTime;
+            document.getElementById('todayDebtIncrease').textContent = 
+                calculateEstimatedDebt(delayTime).toFixed(2);
+        });
+
+        function saveState() {
+            localStorage.setItem('appState', JSON.stringify({
+                rewardCounter,
+                totalDebt,
+                installments,
+                currentDate,
+                delayHistory
+            }));
+        }
+
+        function loadState() {
+            const savedState = localStorage.getItem('appState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                rewardCounter = state.rewardCounter;
+                totalDebt = state.totalDebt;
+                installments = state.installments;
+                currentDate = state.currentDate;
+                delayHistory = state.delayHistory;
+                updateUI();
+            }
+        }
+
+        function processInstallments() {
+            const dueInstallments = installments.filter(inst => inst.dueDate === currentDate);
+            const todayTotal = formatNumber(dueInstallments.reduce((sum, inst) => sum + inst.amount, 0));
+            if (todayTotal > 0) {
+                totalDebt = formatNumber(totalDebt + todayTotal);
+                delayHistory.push({
+                    day: currentDate,
+                    amount: todayTotal,
+                    type: 'installment'
+                });
+            }
+            installments = installments.filter(inst => inst.dueDate !== currentDate);
+        }
+
+        function startNewDay() {
+            currentDate++;
+            processInstallments();
+            totalDebt = formatNumber(totalDebt * 1.0015); // 每日利息，控制精度
+            
+            // 清空今日预览
+            document.getElementById('todayDelay').textContent = '0';
+            document.getElementById('todayDebtIncrease').textContent = '0.00';
+            document.getElementById('delayTime').value = '0';
+            
+            updateUI();
+            saveState();
+        }
+
+        function addRecord() {
+            const delayTime = parseInt(document.getElementById('delayTime').value);
+            if (delayTime < 0 || delayTime > 1440) {
+                alert('请输入0-1440分钟之间的有效延迟时间！');
+                return;
+            }
+            
+            // 记录历史
+            delayHistory.push({
+                day: currentDate,
+                delay: delayTime,
+                type: 'delay'
+            });
+
+            // 处理未拖延天数计数
+            if (delayTime === 0) {
+                rewardCounter++;
+                if (rewardCounter >= 3) {
+                    totalDebt *= 0.8;
+                    rewardCounter = 0;
+                }
+            } else {
+                rewardCounter = 0;
+            }
+
+            // 处理新增债务
+            if (delayTime > 0) {
+                if (delayTime < 180) {
+                    totalDebt = formatNumber(totalDebt + delayTime * 2);
+                } else {
+                    const baseAmount = delayTime * 2;
+                    const installment = formatNumber(baseAmount / 3); // 三等分
+                    
+                    totalDebt = formatNumber(totalDebt + installment); // 立即添加首期
+                    installments.push(
+                        { amount: installment, dueDate: currentDate + 1 },
+                        { amount: installment, dueDate: currentDate + 2 }
+                    );
+                }
+            }
+
+            // 清空输入
+            document.getElementById('delayTime').value = '0';
+            document.getElementById('todayDelay').textContent = '0';
+            document.getElementById('todayDebtIncrease').textContent = '0.00';
+
+            updateUI();
+            saveState();
+        }
+
+        function makePayment() {
+            const paymentAmount = parseFloat(document.getElementById('paymentAmount').value);
+            if (isNaN(paymentAmount) || paymentAmount <= 0) {
+                alert('请输入有效的还款金额！');
+                return;
+            }
+            if (paymentAmount > totalDebt) {
+                alert('还款金额不能超过总债务！');
+                return;
+            }
+            
+            totalDebt = formatNumber(Math.max(0, totalDebt - paymentAmount));
+            document.getElementById('paymentAmount').value = '0';
+            
+            delayHistory.push({
+                day: currentDate,
+                delay: 0,
+                payment: formatNumber(paymentAmount),
+                type: 'payment'
+            });
+            
+            updateUI();
+            saveState();
+        }
+
+        function updateUI() {
+            document.getElementById('totalDebt').textContent = totalDebt.toFixed(2);
+            document.getElementById('rewardCounter').textContent = rewardCounter;
+            document.getElementById('currentDay').textContent = currentDate;
+            
+            const installmentsList = document.getElementById('installmentsList');
+            installmentsList.innerHTML = '';
+            installments.forEach(inst => {
+                const div = document.createElement('div');
+                div.className = 'installment-item';
+                div.textContent = `金额：${inst.amount.toFixed(2)} | 到期日：第 ${inst.dueDate} 天`;
+                installmentsList.appendChild(div);
+            });
+
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+            delayHistory.slice(-5).reverse().forEach(record => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                
+                switch(record.type) {
+                    case 'payment':
+                        div.classList.add('payment');
+                        div.textContent = `第 ${record.day} 天：还债 ${record.payment.toFixed(2)}`;
+                        break;
+                    case 'installment':
+                        div.classList.add('delay');
+                        div.textContent = `第 ${record.day} 天：分期付款到期 ${record.amount.toFixed(2)}`;
+                        break;
+                    default:
+                        if (record.delay === 0) {
+                            div.classList.add('success');
+                        } else {
+                            div.classList.add('delay');
+                        }
+                        div.textContent = `第 ${record.day} 天：延迟 ${record.delay} 分钟`;
+                }
+                
+                historyList.appendChild(div);
+            });
+        }
+
+        // 初始化函数
+        function init() {
+            try {
+                loadState();
+            } catch (e) {
+                console.error('加载状态失败:', e);
+                // 使用默认值
+                rewardCounter = 0;
+                totalDebt = 0.0;
+                installments = [];
+                currentDate = 0;
+                delayHistory = [];
+            }
+            updateUI();
+        }
+
+        // 页面加载时初始化
+        init();
+    </script>
+</body>
+</html>
