@@ -25,7 +25,7 @@
 ### 快速开始
 1. 克隆本仓库：
 ```bash
-git clone https://github.com/CurSpoon/Delayed-bank.git
+git clone https://github.com/CurSpoon/Delayed-Bank.git
 ```
 3. 用浏览器打开 `index.html`
 
