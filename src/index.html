@@ -285,6 +285,7 @@
         let installments = [];
         let currentDate = 0;
         let delayHistory = [];  // 新增：存储历史延迟时间
+        let todayHasZeroDelay = false;  // 新增：记录当天是否已有0分钟延迟记录
 
         // 添加精度控制辅助函数
         function formatNumber(num) {
@@ -313,7 +314,8 @@
                 totalDebt,
                 installments,
                 currentDate,
-                delayHistory
+                delayHistory,
+                todayHasZeroDelay  // 添加新变量到存储
             }));
         }
 
@@ -326,6 +328,7 @@
                 installments = state.installments;
                 currentDate = state.currentDate;
                 delayHistory = state.delayHistory;
+                todayHasZeroDelay = state.todayHasZeroDelay || false;  // 兼容旧数据
                 updateUI();
             }
         }
@@ -348,6 +351,7 @@
             currentDate++;
             processInstallments();
             totalDebt = formatNumber(totalDebt * 1.0015); // 每日利息，控制精度
+            todayHasZeroDelay = false;  // 重置每日标记
             
             // 清空今日预览
             document.getElementById('todayDelay').textContent = '0';
@@ -373,14 +377,16 @@
             });
 
             // 处理未拖延天数计数
-            if (delayTime === 0) {
+            if (delayTime === 0 && !todayHasZeroDelay) {
                 rewardCounter++;
+                todayHasZeroDelay = true;
                 if (rewardCounter >= 3) {
                     totalDebt *= 0.8;
                     rewardCounter = 0;
                 }
-            } else {
+            } else if (delayTime > 0) {
                 rewardCounter = 0;
+                todayHasZeroDelay = false;
             }
 
             // 处理新增债务
